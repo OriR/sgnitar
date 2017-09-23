@@ -3,6 +3,7 @@ import debounce from 'lodash/debounce';
 import AutoComplete from 'react-autocomplete';
 import tmdb from './tmdb-wrapper';
 import './App.css';
+import EmojiRating from './EmojiRating';
 
 
 class App extends Component {
@@ -58,7 +59,7 @@ class App extends Component {
               return (
                 <div key={credit.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100px', marginBottom: '15px' }}>
                     { credit.poster_path && <img title={ credit.original_title || credit.original_name } src={`${tmdb.common.images_uri}/w92/${credit.poster_path}`} style={{ width: '92px', height: '138px'}} /> }
-                    <span > { credit.vote_average } ⭐ </span>
+                    <EmojiRating max={10} rating={credit.vote_average}/>
                 </div>
               );
             })
