@@ -12,7 +12,8 @@ class App extends Component {
       query: '',
       personResults: [],
       currentPerson: null,
-      creditResults: null
+      creditResults: null,
+      toggles: {}
     };
 
     this.getActors = debounce((query) => {
@@ -28,7 +29,8 @@ class App extends Component {
     }, 300);
   }
 
-  getRating(credits, type) {
+  getRating(credits, type, extraFilters = () => true) {
+    credits = credits.filter(credit => new Date(credit.release_date) < new Date() && credit.vote_count > 0 && extraFilters(credit));
     const precisionRound = (number, precision) => {
       const factor = Math.pow(10, precision);
       const tempNumber = number * factor;
@@ -44,10 +46,24 @@ class App extends Component {
     }
 
     return (
-      <div style={{ marginTop: '20px'}}>
-        <span>Average rating for {this.state.currentPerson} as a {type} </span>
-        <span> { precisionRound(normalizedValue / normalizedSum, 1) } </span>
-        <span>(with {credits.length} title(s))</span>
+      <div key={type} style={{ marginTop: '20px'}}>
+        <div onClick={() => this.setState({ toggles: { ...this.state.toggles, [type]: !this.state.toggles[type] } })}>
+          <span>Average rating for {this.state.currentPerson} as a {type} </span>
+          <span> { precisionRound(normalizedValue / normalizedSum, 1) } </span>
+          <span>(with {credits.length} title(s))</span>
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap' }}>
+          { this.state.toggles[type] &&
+            credits.map(credit => {
+              return (
+                <div key={credit.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100px', marginBottom: '15px' }}>
+                    { credit.poster_path && <img title={ credit.original_title || credit.original_name } src={`${tmdb.common.images_uri}/w92/${credit.poster_path}`} style={{ width: '92px', height: '138px'}} /> }
+                    <span > { credit.vote_average } ⭐ </span>
+                </div>
+              );
+            })
+          }
+        </div>
       </div>
     );
   }
@@ -80,11 +96,11 @@ class App extends Component {
           }}
           onSelect={(name, item) => {
             tmdb.people.getCredits({ id: item.id }).then(credits => {
-              this.setState({ currentPerson: item.name, creditResults: credits });
+              this.setState({ currentPerson: item.name, creditResults: credits, toggles: {} });
             });
           }}
         />
-        { this.state.creditResults && this.getRating(this.state.creditResults.cast, 'Actor') }
+        { this.state.creditResults && this.getRating(this.state.creditResults.cast, 'Actor', credit => credit.character && credit.character.toLowerCase() !== 'himself' && credit.character.toLowerCase() !== 'herself') }
         { this.state.creditResults && Object.values(this.state.creditResults.crew.reduce((jobs, credit) => {
           jobs[credit.job] = jobs[credit.job] || [];
           jobs[credit.job].push(credit);

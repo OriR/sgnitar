@@ -13,7 +13,15 @@ export default Object.keys(tmdb).reduce((wrapper, key) => {
         tmdb[key][action](...args, (responseText) => {
           resolve(JSON.parse(responseText));
         }, (responseText) => {
-          reject(JSON.parse(responseText));
+          let responseObject;
+
+          try {
+            responseObject = JSON.parse(responseText);
+          } catch(e) {
+            responseObject = { error: 'unknown' }
+          }
+
+          reject(responseObject);
         })
       });
     };
